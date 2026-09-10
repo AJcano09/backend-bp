@@ -1,35 +1,9 @@
-# .NET Core / Visual Studio
-[Bb]in/
-[Oo]bj/
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
+# Environment and local tooling (never commit secrets or personal config)
+.env*
+.atl/
+.config/
+.idea/
 
-# Visual Studio Code
-.vscode/
-
-# Build results
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]64/
-[Aa][Rr][Mm]/
-
-# NuGet Packages
-*.nupkg
-**/packages/*
-!**/packages/build/
-*.nuget.props
-*.nuget.targets
-
-# Environment variables / User secrets
-.env
-*.usersecrets
-
-# OS files
-.DS_Store
-Thumbs.db
+# Build output
+bin/
+obj/
