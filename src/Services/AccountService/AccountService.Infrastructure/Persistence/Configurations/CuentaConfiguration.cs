@@ -31,5 +31,10 @@ public sealed class CuentaConfiguration : IEntityTypeConfiguration<Cuenta>
             .WithMany()
             .HasForeignKey(c => c.ClienteId)
             .HasConstraintName("FK_Cuentas_ClientesLectura");
+
+        // Collection navigation: EF appends movements through the backing
+        // field; the get-only IReadOnlyCollection is kept for reads.
+        builder.Navigation(c => c.Movimientos)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
