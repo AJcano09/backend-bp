@@ -64,7 +64,7 @@ namespace ClientService.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Personas", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Personas_Age", "Edad BETWEEN 1 AND 130");
+                            t.HasCheckConstraint("CK_Personas_Age", "\"Edad\" BETWEEN 1 AND 130");
                         });
 
                     b.UseTptMappingStrategy();
@@ -84,7 +84,7 @@ namespace ClientService.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Clientes", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Personas_Age", "Edad BETWEEN 1 AND 130");
+                            t.HasCheckConstraint("CK_Personas_Age", "\"Edad\" BETWEEN 1 AND 130");
                         });
                 });
 

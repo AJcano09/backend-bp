@@ -27,7 +27,7 @@ namespace ClientService.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Personas", x => x.Id);
-                    table.CheckConstraint("CK_Personas_Age", "Edad BETWEEN 1 AND 130");
+                    table.CheckConstraint("CK_Personas_Age", "\"Edad\" BETWEEN 1 AND 130");
                 });
 
             migrationBuilder.CreateTable(

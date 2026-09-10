@@ -31,7 +31,7 @@ public sealed class PersonaConfiguration : IEntityTypeConfiguration<Persona>
             .HasMaxLength(20);
 
         // Same CHECK as database.sql: age must be a valid domain value.
-        builder.ToTable(t => t.HasCheckConstraint("CK_Personas_Age", "Edad BETWEEN 1 AND 130"));
+        builder.ToTable(t => t.HasCheckConstraint("CK_Personas_Age", "\"Edad\" BETWEEN 1 AND 130"));
 
         // Business key + mitigation of sequential-id enumeration.
         builder.HasIndex(p => p.Identificacion).IsUnique();
