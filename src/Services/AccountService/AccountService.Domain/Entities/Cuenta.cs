@@ -27,8 +27,8 @@ public sealed class Cuenta
     /// <summary>Immutable ledger of this account (F2).</summary>
     public IReadOnlyCollection<Movimiento> Movimientos => _movimientos;
 
-    /// <summary>Current balance: initial balance plus all registered movements.</summary>
-    public decimal SaldoDisponible => SaldoInicial + _movimientos.Sum(m => m.Valor);
+    /// <summary>Current balance: initial balance plus all registered movements (withdrawal sign applied).</summary>
+    public decimal SaldoDisponible => SaldoInicial + _movimientos.Sum(m => m.TipoMovimiento.Signo() * m.Valor);
 
     private Cuenta()
     {

@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientService.Domain.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountService.IntegrationTests", "tests\AccountService.IntegrationTests\AccountService.IntegrationTests.csproj", "{2CEA6AE6-C0BD-4025-8643-C53401724D99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountService.Domain.Tests", "tests\AccountService.Domain.Tests\AccountService.Domain.Tests.csproj", "{B3EB9412-83F0-40FD-93D1-0335487E5C16}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{2CEA6AE6-C0BD-4025-8643-C53401724D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2CEA6AE6-C0BD-4025-8643-C53401724D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CEA6AE6-C0BD-4025-8643-C53401724D99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3EB9412-83F0-40FD-93D1-0335487E5C16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3EB9412-83F0-40FD-93D1-0335487E5C16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3EB9412-83F0-40FD-93D1-0335487E5C16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3EB9412-83F0-40FD-93D1-0335487E5C16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6309FC51-D03C-4BCA-99E2-B4F451BC727A} = {10B26342-E40C-44A8-BC52-67B5219321A3}
@@ -109,5 +115,6 @@ Global
 		{26DCE8A7-9F3E-4827-9D3A-B77025FAE62F} = {DC68CEEA-35A8-4E75-AB88-D20505D41DD0}
 		{7EBFB89E-42A2-4F8D-A6F2-DBA90160067F} = {69BBFB3B-2009-4ED2-AA2D-1A035D51511A}
 		{2CEA6AE6-C0BD-4025-8643-C53401724D99} = {69BBFB3B-2009-4ED2-AA2D-1A035D51511A}
+		{B3EB9412-83F0-40FD-93D1-0335487E5C16} = {69BBFB3B-2009-4ED2-AA2D-1A035D51511A}
 	EndGlobalSection
 EndGlobal
