@@ -338,7 +338,13 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Mensaje amigable en la baja logica\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.message).to.be.a('string').and.not.empty;",
+                  "  pm.expect(body.cliente).to.be.an('object');",
+                  "  pm.expect(body.cliente.estado).to.eql(false);",
+                  "});"
                 ],
                 "type": "text/javascript"
               }

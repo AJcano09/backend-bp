@@ -73,7 +73,7 @@ public sealed class ClienteService
     /// The row is never physically removed: the FK with accounts is preserved
     /// and "inactive client" is the real banking semantics.
     /// </summary>
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<ClienteResponse> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var cliente = await GetActiveOrThrowAsync(id, cancellationToken);
 
@@ -82,6 +82,8 @@ public sealed class ClienteService
 
         await _eventPublisher.PublishAsync(new ClienteChangedEvent(
             ClienteChangedEvent.Deleted, cliente.Id, cliente.Nombre, DateTime.UtcNow), cancellationToken);
+
+        return ClienteResponse.FromDomain(cliente);
     }
 
     public async Task<ClienteResponse?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

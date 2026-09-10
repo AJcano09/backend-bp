@@ -68,13 +68,15 @@ public sealed class ClientesController : ControllerBase
     /// stays, preserving the FK with accounts. Banking semantics.
     /// </summary>
     [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ClienteDeleteResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(
+    public async Task<ActionResult<ClienteDeleteResponse>> Delete(
         int id,
         CancellationToken cancellationToken)
     {
-        await _clienteService.DeleteAsync(id, cancellationToken);
-        return NoContent();
+        var cliente = await _clienteService.DeleteAsync(id, cancellationToken);
+        return Ok(new ClienteDeleteResponse(
+            $"Client {id} was logically deleted.",
+            cliente));
     }
 }
