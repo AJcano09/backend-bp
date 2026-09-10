@@ -3,6 +3,8 @@
 .atl/
 .config/
 .idea/
+*.DotSettings
+*.DotSettings.user
 
 # Build output
 bin/
