@@ -1,6 +1,4 @@
-﻿version: '3.8'
-
-services:
+﻿services:
   # Microservicio 1: Cliente/Persona (Contiene Domain, App, Infra internamente)
   clientservice.api:
     image: clientservice.api
@@ -12,11 +10,13 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_db;Username=admin;Password=adminpassword
+      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_clients;Username=admin;Password=adminpassword
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - postgres-db
-      - rabbitmq
+      postgres-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
   # Microservicio 2: Cuenta/Movimientos (Contiene Domain, App, Infra internamente)
@@ -30,28 +30,40 @@ services:
       - "5002:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_db;Username=admin;Password=adminpassword
+      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_accounts;Username=admin;Password=adminpassword
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - postgres-db
-      - rabbitmq
+      postgres-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
-  # Base de datos compartida (PostgreSQL)
+  # Una instancia de PostgreSQL, DOS bases (database-per-service).
+  # bank_clients se crea con POSTGRES_DB; bank_accounts la crea el EF Core
+  # de AccountService al arrancar (Database.Migrate(), usuario superuser).
   postgres-db:
     image: postgres:15-alpine
     container_name: bank_postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: adminpassword
-      POSTGRES_DB: bank_db
+      POSTGRES_DB: bank_clients
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d bank_clients"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
-  # Message Broker (RabbitMQ)
+  # Message Broker: comunicación asíncrona ClientService -> AccountService
+  # (ClientService publica eventos de cliente; AccountService mantiene su
+  # read model ClientesLectura para el reporte F4).
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: bank_rabbitmq
@@ -61,6 +73,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
 
 volumes:

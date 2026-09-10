@@ -1,0 +1,14 @@
+.git
+.gitignore
+**/bin
+**/obj
+tests
+.atl
+.config
+.idea
+.vscode
+.env
+.env.*
+*.local
+**/*.user
+**/*.suo
