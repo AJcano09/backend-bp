@@ -25,6 +25,16 @@ La solución se levanta de forma automatizada mediante Docker Compose, el cual c
    git clone <url-del-repositorio>
    cd backend-bp
 
+## 🧪 Pruebas
+
+Las pruebas de integración (`tests/AccountService.IntegrationTests`) levantan un **PostgreSQL real y desechable con Testcontainers** contra la API en memoria (`WebApplicationFactory`) — ejercitan F2/F3 de punta a punta (HTTP + base real, sin mocks).
+
+**Requieren Docker corriendo en la máquina** (Testcontainers necesita el daemon disponible para crear y destruir el contenedor). Las pruebas unitarias (`tests/ClientService.Domain.Tests`) no tienen dependencias externas.
+
+```bash
+dotnet test backend-bp.sln
+```
+
 
 ## 📂 Endpoints Principales
 

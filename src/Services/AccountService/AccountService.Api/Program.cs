@@ -42,3 +42,9 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { service = "accountservice", status = "ok" }));
 
 app.Run();
+
+/// <summary>
+/// Exposes the implicit Program class (top-level statements) to test hosts:
+/// WebApplicationFactory&lt;Program&gt; requires a public entry type.
+/// </summary>
+public partial class Program { }
