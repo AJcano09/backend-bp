@@ -1,5 +1,8 @@
 # Environment and local tooling (never commit secrets or personal config)
-.env*
+.env
+.env.*
+!.env.example
+!**/.env.example
 .atl/
 .config/
 .idea/

@@ -24,6 +24,33 @@ La solución se levanta de forma automatizada mediante Docker Compose, el cual c
    ```bash
    git clone <url-del-repositorio>
    cd backend-bp
+   ```
+
+## 🔐 Configuración
+
+Las credenciales y cadenas de conexión **no se versionan**. Copia los archivos de ejemplo (que sí están en el repo) y ajusta las contraseñas si lo deseas — los valores de ejemplo funcionan tal cual para correr localmente:
+
+```bash
+cp .env.example .env
+cp src/Services/ClientService/.env.example src/Services/ClientService/.env
+cp src/Services/AccountService/.env.example src/Services/AccountService/.env
+```
+
+- El `.env` raíz alimenta la infraestructura (Postgres y RabbitMQ) por interpolación en `docker-compose.yaml`.
+- Cada API usa su propio `.env` (`env_file:` en compose) con su cadena de conexión y host del broker; cada servicio queda autocontenido.
+- Para desarrollo local **sin Docker** (`dotnet run`), usa `dotnet user-secrets` en lugar de editar `appsettings.json`:
+  ```bash
+  cd src/Services/ClientService/ClientService.Api
+  dotnet user-secrets init
+  dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=bank_clients;Username=admin;Password=changeme"
+  dotnet user-secrets set "RabbitMQ:Host" "localhost"
+  ```
+  (repite para `AccountService.Api` con `Database=bank_accounts`).
+
+3. Levanta la solución:
+   ```bash
+   docker compose up --build
+   ```
 
 ## 🧪 Pruebas
 

@@ -8,10 +8,8 @@
       dockerfile: src/Services/ClientService/ClientService.Api/Dockerfile
     ports:
       - "5001:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_clients;Username=admin;Password=adminpassword
-      - RabbitMQ__Host=rabbitmq
+    env_file:
+      - ./src/Services/ClientService/.env
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -28,10 +26,8 @@
       dockerfile: src/Services/AccountService/AccountService.Api/Dockerfile
     ports:
       - "5002:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres-db;Port=5432;Database=bank_accounts;Username=admin;Password=adminpassword
-      - RabbitMQ__Host=rabbitmq
+    env_file:
+      - ./src/Services/AccountService/.env
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -46,15 +42,15 @@
     image: postgres:15-alpine
     container_name: bank_postgres
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminpassword
-      POSTGRES_DB: bank_clients
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB_CLIENTS}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d bank_clients"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_CLIENTS}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -63,13 +59,14 @@
 
   # Message Broker: comunicación asíncrona ClientService -> AccountService
   # (ClientService publica eventos de cliente; AccountService mantiene su
-  # read model ClientesLectura para el reporte F4).
+  # read model ClientesLectura para el reporte F4). Las credenciales se
+  # inyectan desde el .env raíz (gitignorado); nunca hardcodear aquí.
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: bank_rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
       - "5672:5672"
       - "15672:15672"
