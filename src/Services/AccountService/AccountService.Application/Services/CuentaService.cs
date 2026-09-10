@@ -49,7 +49,7 @@ public sealed class CuentaService
         var cuenta = await GetByNumeroCuentaAsync(numeroCuenta, cancellationToken);
 
         cuenta.Update(tipo);
-        _cuentaRepository.Update(cuenta);
+        await _cuentaRepository.UpdateAsync(cuenta, cancellationToken);
         return cuenta;
     }
 
@@ -64,7 +64,7 @@ public sealed class CuentaService
         var cuenta = await GetByNumeroCuentaAsync(request.NumeroCuenta, cancellationToken);
 
         cuenta.RegistrarMovimiento(tipoMovimiento, request.Valor);
-        _cuentaRepository.Update(cuenta);
+        await _cuentaRepository.UpdateAsync(cuenta, cancellationToken);
         return cuenta;
     }
 

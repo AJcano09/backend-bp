@@ -38,11 +38,13 @@ public sealed class CuentaRepository : ICuentaRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public void Update(Cuenta cuenta)
+    public async Task UpdateAsync(Cuenta cuenta, CancellationToken cancellationToken = default)
     {
-        // Changed entities are tracked by the context; SaveChanges is issued
-        // by the consumer scope (the API pipeline), NOT by the repository.
+        // Entities in the graph with a default key (e.g. a brand new
+        // Movimiento) are marked Added by EF, so the INSERT happens here with
+        // identity fix-up; the rest are updated in place.
         _dbContext.Cuentas.Update(cuenta);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default)

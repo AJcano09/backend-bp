@@ -47,7 +47,11 @@ public sealed class Movimiento
         if (valor <= 0)
             throw new ArgumentOutOfRangeException(nameof(valor), "The movement value must be positive.");
 
-        Fecha = DateTime.UtcNow;
+        // UTC wall-clock as a naive timestamp: the storage contract is
+        // "timestamp without time zone" (matches the deliverable BaseDatos.sql
+        // and MovimientoConfiguration). Npgsql rejects a Kind=UTC DateTime
+        // for that column type, so the Kind is stripped after UTC is captured.
+        Fecha = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         TipoMovimiento = tipoMovimiento;
         Valor = valor;
         NumeroCuenta = numeroCuenta;

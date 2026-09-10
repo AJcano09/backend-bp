@@ -32,6 +32,16 @@ public class MovimientosIntegrationTests : IClassFixture<AccountApiFixture>
         Assert.Equal(HttpStatusCode.Created, movimiento.StatusCode);
         var body = await movimiento.Content.ReadFromJsonAsync<MovimientoResponse>();
         Assert.Equal(2600, body!.Saldo);
+
+        // Persistence regression guard: the movement must survive in the
+        // real database (the response alone could be an in-memory projection;
+        // a repository Update that never saved would still pass the check
+        // above and lose the write).
+        var ledger = await client.GetFromJsonAsync<List<MovimientoResponse>>("/api/movimientos?cuenta=478758");
+        var persisted = Assert.Single(ledger!);
+        Assert.Equal(600, persisted.Valor);
+        Assert.Equal(2600, persisted.Saldo);
+        Assert.NotEqual(0, persisted.Id); // identity fix-up proves the INSERT ran
     }
 
     [Fact]

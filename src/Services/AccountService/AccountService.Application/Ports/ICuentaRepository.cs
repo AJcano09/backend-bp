@@ -15,7 +15,13 @@ public interface ICuentaRepository
 
     Task AddAsync(Cuenta cuenta, CancellationToken cancellationToken = default);
 
-    void Update(Cuenta cuenta);
+    /// <summary>
+    /// Persists changes to an existing Cuenta, including newly registered
+    /// movements (the aggregate is always loaded with its ledger). The
+    /// repository owns the SaveChanges: there is no external unit of work in
+    /// the API pipeline, so relying on one would silently drop writes.
+    /// </summary>
+    Task UpdateAsync(Cuenta cuenta, CancellationToken cancellationToken = default);
 
     /// <summary>True when the client is already mirrored in ClientesLectura (read model).</summary>
     Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default);
