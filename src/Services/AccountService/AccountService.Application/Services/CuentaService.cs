@@ -28,8 +28,13 @@ public sealed class CuentaService
         if (await _cuentaRepository.GetByNumeroCuentaAsync(request.NumeroCuenta, cancellationToken) is not null)
             throw new InvalidOperationException($"The account number {request.NumeroCuenta} already exists.");
 
-        if (!await WaitForClienteReadModelAsync(request.ClienteId, cancellationToken))
+        var clienteEstado = await WaitForClienteReadModelAsync(request.ClienteId, cancellationToken);
+
+        if (clienteEstado is null)
             throw new ArgumentException($"The client {request.ClienteId} is not registered in the account service (ClientesLectura).");
+
+        if (clienteEstado is false)
+            throw new InvalidOperationException($"The client {request.ClienteId} is deactivated and cannot own a new account.");
 
         var cuenta = new Cuenta(request.NumeroCuenta, tipo, request.SaldoInicial, request.ClienteId);
         await _cuentaRepository.AddAsync(cuenta, cancellationToken);
@@ -81,20 +86,23 @@ public sealed class CuentaService
     /// 10 seconds) absorbs the broker warm-up so the API never reports a false
     /// "client not registered"; a client that is still absent afterwards is a
     /// genuine business/integration error and keeps the original message.
+    /// Returns the mirrored Estado once known: null = not yet registered,
+    /// false = deactivated client (business rule rejection), true = active.
     /// </summary>
-    private async Task<bool> WaitForClienteReadModelAsync(int clienteId, CancellationToken cancellationToken)
+    private async Task<bool?> WaitForClienteReadModelAsync(int clienteId, CancellationToken cancellationToken)
     {
         for (var attempt = 0; attempt < 20; attempt++)
         {
-            if (await _cuentaRepository.ClienteExisteAsync(clienteId, cancellationToken))
-                return true;
+            var estado = await _cuentaRepository.ClienteActivoAsync(clienteId, cancellationToken);
+            if (estado is not null)
+                return estado;
 
             if (attempt == 19)
-                return false;
+                return null;
 
             await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
         }
 
-        return false;
+        return null;
     }
 }

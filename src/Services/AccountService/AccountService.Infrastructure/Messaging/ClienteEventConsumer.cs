@@ -130,20 +130,28 @@ public sealed class ClienteEventConsumer : BackgroundService
                 case ClienteChangedEvent.Updated:
                     if (existente is null)
                     {
-                        dbContext.ClientesLectura.Add(new ClientesLectura(evt.ClienteId, evt.Nombre));
-                        _logger.LogInformation("Read model created for client {ClienteId}.", evt.ClienteId);
+                        dbContext.ClientesLectura.Add(new ClientesLectura(evt.ClienteId, evt.Nombre, evt.Estado));
+                        _logger.LogInformation("Read model created for client {ClienteId} (Estado={Estado}).",
+                            evt.ClienteId, evt.Estado);
                     }
-                    else if (existente.Nombre != evt.Nombre)
+                    else
                     {
-                        existente.UpdateNombre(evt.Nombre);
-                        _logger.LogInformation("Read model updated for client {ClienteId}.", evt.ClienteId);
+                        if (existente.Nombre != evt.Nombre)
+                            existente.UpdateNombre(evt.Nombre);
+                        if (existente.Estado != evt.Estado)
+                            existente.UpdateEstado(evt.Estado);
                     }
                     break;
 
                 case ClienteChangedEvent.Deleted:
-                    // Soft-deleted clients keep their accounts and history:
-                    // the read model row is kept so F4 statements still work.
-                    _logger.LogInformation("Ignoring deleted event for client {ClienteId} (read model keeps history).", evt.ClienteId);
+                    // Soft-deleted clients keep their accounts and history,
+                    // but the row must be marked inactive so the account
+                    // service rejects new accounts for them (F1 banking rule).
+                    if (existente is not null && existente.Estado)
+                    {
+                        existente.UpdateEstado(false);
+                        _logger.LogInformation("Read model deactivated for client {ClienteId}.", evt.ClienteId);
+                    }
                     break;
 
                 default:

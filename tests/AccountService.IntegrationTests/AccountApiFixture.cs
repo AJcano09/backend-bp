@@ -51,7 +51,7 @@ public sealed class AccountApiFixture : WebApplicationFactory<Program>, IAsyncLi
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
         await db.Database.MigrateAsync();
-        db.ClientesLectura.Add(new ClientesLectura(clienteId, nombre));
+        db.ClientesLectura.Add(new ClientesLectura(clienteId, nombre, estado: true));
         await db.SaveChangesAsync();
     }
 

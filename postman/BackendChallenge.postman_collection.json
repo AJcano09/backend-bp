@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "9f7c1c2a-5d4e-4f3a-9b8c-2d1e0f3a4b5c",
     "name": "Backend Challenge - Microservicios Bancarios",
-    "description": "Colección de validación de endpoints del challenge bancario (.NET 8). Dos microservicios: ClientService (clientes) y AccountService (cuentas, movimientos, reportes), comunicados por RabbitMQ.\n\nPara ejecutar: levantar los servicios con `docker compose up -d` desde la raíz del repo y correr la colección con \"Run Collection\" de arriba a abajo.\n\nLos puertos se configuran con las variables `clientServiceUrl` y `accountServiceUrl`. Los ids de cliente se encadenan automáticamente entre requests (scripts en la pestaña Tests de cada POST de creación), así que la colección no depende de una base vacía ni de ids fijos.\n\nResultados esperados en la primera ejecución (datos del enunciado):\n- Jose Lema crea la cuenta 478758 (Ahorros, 2000) y retira 575 -> saldo 1425\n- Marianela Montalvo crea 225487 (Corriente, 100) y deposita 600 -> saldo 700\n- Juan Osorio crea 495878 (Ahorros, 0) y deposita 150 -> saldo 150\n- Marianela crea 496825 (Ahorros, 540) y retira 540 -> saldo 0\n- El último movimiento (retiro 5000 en 496825) fuerza el caso F3: HTTP 400 \"Saldo no disponible\"\n\nAlgunos tests son tolerantes a re-ejecución: correr la colección dos veces sobre la misma base puede cambiar saldos ya acumulados; los asserts siguen en verde mientras el contrato HTTP se cumpla.",
+    "description": "Colección de validación de endpoints del challenge bancario (.NET 8). Dos microservicios: ClientService (clientes) y AccountService (cuentas, movimientos, reportes), comunicados por RabbitMQ.\n\nPara ejecutar: levantar los servicios con `docker compose up -d` desde la raíz del repo y correr la colección con \"Run Collection\" de arriba a abajo.\n\nLos puertos se configuran con las variables `clientServiceUrl` y `accountServiceUrl`. Los ids de cliente se encadenan automáticamente entre requests (scripts en la pestaña Tests de cada POST de creación), así que la colección no depende de una base vacía ni de ids fijos.\n\nResultados esperados en la primera ejecución (datos del enunciado):\n- Jose Lema crea la cuenta 478758 (Ahorros, 2000) y retira 575 -> saldo 1425\n- Marianela Montalvo crea 225487 (Corriente, 100) y deposita 600 -> saldo 700\n- Juan Osorio es dado de baja; su cuenta 495878 NO puede crearse después (regla: no hay cuentas nuevas para un cliente deshabilitado) -> 409 y el depósito sobre ella -> 404\n- Marianela crea 496825 (Ahorros, 540) y retira 540 -> saldo 0\n- El último movimiento (retiro 5000 en 496825) fuerza el caso F3: HTTP 400 \"Saldo no disponible\"\n\nAlgunos tests son tolerantes a re-ejecución: correr la colección dos veces sobre la misma base puede cambiar saldos ya acumulados; los asserts siguen en verde mientras el contrato HTTP se cumpla.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
@@ -474,16 +474,14 @@
           "response": []
         },
         {
-          "name": "POST Crear cuenta 495878 - Juan Osorio (Ahorros 0)",
+          "name": "POST Crear cuenta 495878 - Juan Osorio (rechazada: baja lógica)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status 201 o ya-existente (400/409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]));",
-                  "if (pm.response.code === 201) {",
-                  "  pm.test(\"Saldo inicial 0\", () => pm.expect(pm.response.json().saldoDisponible).to.eql(0));",
-                  "}"
+                  "pm.test(\"Status 409 rechaza cliente deshabilitado\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Mensaje de cliente deshabilitado\", () => pm.expect(pm.response.json().detail).to.include('deactivated'));"
                 ],
                 "type": "text/javascript"
               }
@@ -516,7 +514,7 @@
                 "cuentas"
               ]
             },
-            "description": "Caso de uso 3. Juan fue dado de baja lógicamente en la carpeta anterior; el read model conserva la fila deliberadamente, así que la cuenta se crea igual (F4 mantiene el historial)."
+            "description": "Regla de negocio: Juan fue dado de baja lógicamente en la carpeta anterior y el read model conserva la fila con Estado=false; una cuenta nueva NO puede crearse para un cliente deshabilitado (409 con mensaje claro)."
           },
           "response": []
         },
@@ -784,15 +782,13 @@
           "response": []
         },
         {
-          "name": "POST Depósito 150 en 495878 (Juan Osorio)",
+          "name": "POST Depósito 150 en 495878 (cuenta inexistente tras la baja)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
-                  "const body = pm.response.json();",
-                  "pm.test(\"Es un depósito\", () => pm.expect(body.tipoMovimiento).to.eql('Deposito'));"
+                  "pm.test(\"Status 404: la cuenta nunca se creó\", () => pm.response.to.have.status(404));"
                 ],
                 "type": "text/javascript"
               }
@@ -825,7 +821,7 @@
                 "movimientos"
               ]
             },
-            "description": "Movimiento 3 del enunciado: depósito de 150 en la cuenta 495878 (saldo 0 -> 150)."
+            "description": "Consecuencia directa de la regla anterior: 495878 nunca se creó (cliente deshabilitado), así que cualquier movimiento sobre ella responde 404."
           },
           "response": []
         },

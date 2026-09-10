@@ -47,8 +47,12 @@ public sealed class CuentaRepository : ICuentaRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default)
-        => _dbContext.ClientesLectura.AnyAsync(c => c.ClienteId == clienteId, cancellationToken);
+    public Task<bool?> ClienteActivoAsync(int clienteId, CancellationToken cancellationToken = default)
+        => _dbContext.ClientesLectura
+            .AsNoTracking()
+            .Where(c => c.ClienteId == clienteId)
+            .Select(c => (bool?)c.Estado)
+            .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Cuenta>> GetByClienteIdConMovimientosEnRangoAsync(
         int clienteId,

@@ -42,7 +42,7 @@ public sealed class ClienteService
         await _repository.AddAsync(cliente, cancellationToken);
 
         await _eventPublisher.PublishAsync(new ClienteChangedEvent(
-            ClienteChangedEvent.Created, cliente.Id, cliente.Nombre, DateTime.UtcNow), cancellationToken);
+            ClienteChangedEvent.Created, cliente.Id, cliente.Nombre, cliente.Estado, DateTime.UtcNow), cancellationToken);
 
         return ClienteResponse.FromDomain(cliente);
     }
@@ -63,7 +63,7 @@ public sealed class ClienteService
         await _repository.UpdateAsync(cliente, cancellationToken);
 
         await _eventPublisher.PublishAsync(new ClienteChangedEvent(
-            ClienteChangedEvent.Updated, cliente.Id, cliente.Nombre, DateTime.UtcNow), cancellationToken);
+            ClienteChangedEvent.Updated, cliente.Id, cliente.Nombre, cliente.Estado, DateTime.UtcNow), cancellationToken);
 
         return ClienteResponse.FromDomain(cliente);
     }
@@ -81,7 +81,7 @@ public sealed class ClienteService
         await _repository.UpdateAsync(cliente, cancellationToken);
 
         await _eventPublisher.PublishAsync(new ClienteChangedEvent(
-            ClienteChangedEvent.Deleted, cliente.Id, cliente.Nombre, DateTime.UtcNow), cancellationToken);
+            ClienteChangedEvent.Deleted, cliente.Id, cliente.Nombre, cliente.Estado, DateTime.UtcNow), cancellationToken);
 
         return ClienteResponse.FromDomain(cliente);
     }

@@ -12,5 +12,8 @@ public sealed class ClientesLecturaConfiguration : IEntityTypeConfiguration<Clie
         builder.ToTable("ClientesLectura");
         builder.HasKey(l => l.ClienteId);
         builder.Property(l => l.Nombre).HasMaxLength(150).IsRequired();
+        // Default true keeps the seed script (BaseDatos.sql) valid: a
+        // pre-existing row without Estado is an active client.
+        builder.Property(l => l.Estado).IsRequired().HasDefaultValue(true);
     }
 }

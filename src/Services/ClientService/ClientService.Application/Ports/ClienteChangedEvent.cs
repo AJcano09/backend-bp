@@ -10,6 +10,7 @@ public sealed record ClienteChangedEvent(
     string Tipo,
     int ClienteId,
     string Nombre,
+    bool Estado,
     DateTime OcurridoEn)
 {
     public const string Created = "cliente.created";

@@ -23,8 +23,13 @@ public interface ICuentaRepository
     /// </summary>
     Task UpdateAsync(Cuenta cuenta, CancellationToken cancellationToken = default);
 
-    /// <summary>True when the client is already mirrored in ClientesLectura (read model).</summary>
-    Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Client Estado from the read model: null when the client is not yet
+    /// mirrored in ClientesLectura, false when the client is deactivated
+    /// (soft deleted) and true when active. Account creation for a
+    /// deactivated client is a business rule violation (F1), not a lookup miss.
+    /// </summary>
+    Task<bool?> ClienteActivoAsync(int clienteId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// F4 read-only projection: accounts of one client with ONLY the movements

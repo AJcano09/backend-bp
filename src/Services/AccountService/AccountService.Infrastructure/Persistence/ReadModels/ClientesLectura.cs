@@ -13,12 +13,19 @@ public sealed class ClientesLectura
 
     public string Nombre { get; set; } = null!;
 
+    /// <summary>
+    /// Mirror of the client's Estado: a deactivated client (soft deleted)
+    /// must not own new accounts (F1 banking rule), and F4 reports still show
+    /// the name of historical clients.
+    /// </summary>
+    public bool Estado { get; set; }
+
     private ClientesLectura()
     {
         // EF Core materialization.
     }
 
-    public ClientesLectura(int clienteId, string nombre)
+    public ClientesLectura(int clienteId, string nombre, bool estado)
     {
         if (clienteId <= 0)
             throw new ArgumentException("The client id must be a positive integer.", nameof(clienteId));
@@ -27,6 +34,7 @@ public sealed class ClientesLectura
 
         ClienteId = clienteId;
         Nombre = nombre.Trim();
+        Estado = estado;
     }
 
     public void UpdateNombre(string nombre)
@@ -36,4 +44,6 @@ public sealed class ClientesLectura
 
         Nombre = nombre.Trim();
     }
+
+    public void UpdateEstado(bool estado) => Estado = estado;
 }

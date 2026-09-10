@@ -25,7 +25,7 @@ public sealed class ReporteService
         if (desde > hasta)
             throw new ArgumentException("La fecha 'desde' no puede ser posterior a 'hasta'.");
 
-        if (!await _cuentaRepository.ClienteExisteAsync(clienteId, cancellationToken))
+        if (await _cuentaRepository.ClienteActivoAsync(clienteId, cancellationToken) is null)
             throw new ClienteNotFoundException(clienteId);
 
         var cuentas = await _cuentaRepository.GetByClienteIdConMovimientosEnRangoAsync(
