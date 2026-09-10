@@ -20,8 +20,11 @@ namespace AccountService.Infrastructure.Messaging;
 ///
 /// Resilience: the host retries with backoff while the broker is down, and
 /// delivery is acknowledged only after the read model is persisted, so no
-/// event is lost in the happy path. This is the async communication channel
-/// required by the statement.
+/// event is lost in the happy path. Each delivered message gets its OWN
+/// DI scope/DbContext: RabbitMQ delivers with prefetch > 1 and a shared
+/// context would throw NpgsqlOperationInProgressException ("command already
+/// in progress") under concurrent delivery, which previously lost events.
+/// This is the async communication channel required by the statement.
 /// </summary>
 public sealed class ClienteEventConsumer : BackgroundService
 {
@@ -50,8 +53,7 @@ public sealed class ClienteEventConsumer : BackgroundService
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var eventingConsumer = Connect(scope);
+                var eventingConsumer = Connect();
                 await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -74,7 +76,7 @@ public sealed class ClienteEventConsumer : BackgroundService
         }
     }
 
-    private EventingBasicConsumer Connect(IServiceScope scope)
+    private EventingBasicConsumer Connect()
     {
         var options = _options.Value;
         var factory = new ConnectionFactory { HostName = options.Host, DispatchConsumersAsync = false };
@@ -94,7 +96,7 @@ public sealed class ClienteEventConsumer : BackgroundService
         _channel.QueueBind(options.Queue, options.Exchange, "cliente.*");
 
         var consumer = new EventingBasicConsumer(_channel);
-        consumer.Received += async (_, args) => await HandleMessageAsync(scope, args);
+        consumer.Received += async (_, args) => await HandleMessageAsync(args);
         _channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
         _channel.BasicConsume(queue: options.Queue, autoAck: false, consumer: consumer);
 
@@ -104,8 +106,14 @@ public sealed class ClienteEventConsumer : BackgroundService
         return consumer;
     }
 
-    private async Task HandleMessageAsync(IServiceScope scope, BasicDeliverEventArgs args)
+    private async Task HandleMessageAsync(BasicDeliverEventArgs args)
     {
+        // One DI scope per delivered message. RabbitMQ invokes this handler
+        // concurrently (BasicQos prefetchCount: 10) and a DbContext is not
+        // thread-safe: a shared context made a second SELECT collide with the
+        // first ("A command is already in progress") and the poison-path ack
+        // then silently dropped the event from the read model.
+        using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AccountDbContext>();
         var routingKey = args.RoutingKey;
 
