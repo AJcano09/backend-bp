@@ -12,4 +12,28 @@ public sealed class ClientesLectura
     public int ClienteId { get; set; }
 
     public string Nombre { get; set; } = null!;
+
+    private ClientesLectura()
+    {
+        // EF Core materialization.
+    }
+
+    public ClientesLectura(int clienteId, string nombre)
+    {
+        if (clienteId <= 0)
+            throw new ArgumentException("The client id must be a positive integer.", nameof(clienteId));
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new ArgumentException("The client name cannot be empty.", nameof(nombre));
+
+        ClienteId = clienteId;
+        Nombre = nombre.Trim();
+    }
+
+    public void UpdateNombre(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new ArgumentException("The client name cannot be empty.", nameof(nombre));
+
+        Nombre = nombre.Trim();
+    }
 }

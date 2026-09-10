@@ -1,3 +1,5 @@
+using AccountService.Api.Middleware;
+using AccountService.Application;
 using AccountService.Infrastructure;
 using AccountService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
@@ -26,6 +37,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandler();
+app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { service = "accountservice", status = "ok" }));
 
 app.Run();
