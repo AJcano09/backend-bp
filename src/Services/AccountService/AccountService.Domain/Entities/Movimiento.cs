@@ -44,8 +44,12 @@ public sealed class Movimiento
     /// <param name="numeroCuenta">Account number this movement belongs to.</param>
     internal Movimiento(TipoMovimiento tipoMovimiento, decimal valor, decimal saldoAnterior, int numeroCuenta)
     {
-        if (valor <= 0)
-            throw new ArgumentOutOfRangeException(nameof(valor), "The movement value must be positive.");
+        if (valor == 0)
+            throw new ArgumentOutOfRangeException(nameof(valor), "The movement value cannot be zero.");
+
+        // F2: the caller may express the value with either sign; the stored
+        // magnitude is normalized to positive and the type owns the sign.
+        var magnitud = Math.Abs(valor);
 
         // UTC wall-clock as a naive timestamp: the storage contract is
         // "timestamp without time zone" (matches the deliverable BaseDatos.sql
@@ -53,9 +57,9 @@ public sealed class Movimiento
         // for that column type, so the Kind is stripped after UTC is captured.
         Fecha = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         TipoMovimiento = tipoMovimiento;
-        Valor = valor;
+        Valor = magnitud;
         NumeroCuenta = numeroCuenta;
-        Saldo = saldoAnterior + tipoMovimiento.Signo() * valor;
+        Saldo = saldoAnterior + tipoMovimiento.Signo() * magnitud;
 
         if (Saldo < 0)
             throw new SaldoInsuficienteException();

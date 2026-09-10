@@ -696,6 +696,8 @@
                   "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.test(\"Es un retiro\", () => pm.expect(body.tipoMovimiento).to.eql('Retiro'));",
+                  "// F2: el valor se expone con el signo del tipo (retiro negativo), consistente con /reportes.",
+                  "pm.test(\"Valor con signo negativo\", () => pm.expect(body.valor).to.eql(-575));",
                   "// Primera ejecución: saldo 1425 (2000 - 575). En re-ejecución el saldo acumulado es menor; el assert de status es el contrato estable.",
                   "pm.test(\"Id persistido (≠ 0)\", () => pm.expect(body.id).to.not.eql(0));"
                 ],
@@ -744,6 +746,8 @@
                   "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.test(\"Es un depósito\", () => pm.expect(body.tipoMovimiento).to.eql('Deposito'));",
+                  "// F2: el valor se expone con el signo del tipo (depósito positivo), consistente con /reportes.",
+                  "pm.test(\"Valor con signo positivo\", () => pm.expect(body.valor).to.eql(600));",
                   "pm.test(\"Id persistido (≠ 0)\", () => pm.expect(body.id).to.not.eql(0));"
                 ],
                 "type": "text/javascript"

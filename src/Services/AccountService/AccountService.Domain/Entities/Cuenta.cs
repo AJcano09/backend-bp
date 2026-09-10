@@ -72,16 +72,22 @@ public sealed class Cuenta
     /// </summary>
     public Movimiento RegistrarMovimiento(TipoMovimiento tipoMovimiento, decimal valor)
     {
-        if (valor <= 0)
-            throw new ArgumentException("The movement value must be positive.", nameof(valor));
+        if (valor == 0)
+            throw new ArgumentException("The movement value cannot be zero.", nameof(valor));
         if (!Estado)
             throw new InvalidOperationException("The account is inactive and cannot register movements.");
+
+        // F2: the API accepts positive or negative values (a withdrawal may be
+        // sent as -575). The stored magnitude is always positive; the sign is
+        // owned by the movement type (Deposito +1, Retiro -1) and applied
+        // exactly once when computing the post-balance.
+        var magnitud = Math.Abs(valor);
 
         // The post-balance is computed by Movimiento itself; Cuenta only
         // provides the previous balance. If the withdrawal exceeds the
         // available balance, Movimiento throws SaldoInsuficienteException
         // (F3, "Saldo no disponible") BEFORE the movement is added: atomic.
-        var movimiento = new Movimiento(tipoMovimiento, valor, SaldoDisponible, NumeroCuenta);
+        var movimiento = new Movimiento(tipoMovimiento, magnitud, SaldoDisponible, NumeroCuenta);
         _movimientos.Add(movimiento);
         return movimiento;
     }

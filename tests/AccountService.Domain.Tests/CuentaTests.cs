@@ -57,6 +57,29 @@ public class CuentaTests
     }
 
     [Fact]
+    public void Retiro_ConValorNegativo_AceptadoComoF2()
+    {
+        // F2: values can be positive or negative. A withdrawal expressed as
+        // -575 must behave exactly like 575: sign owned by the type, applied
+        // once, never doubled.
+        var cuenta = CuentaConSaldo(saldoInicial: 2000);
+
+        var movimiento = cuenta.RegistrarMovimiento(TipoMovimiento.Retiro, -575);
+
+        Assert.Equal(1425m, cuenta.SaldoDisponible);
+        Assert.Equal(575m, movimiento.Valor); // stored magnitude stays positive
+    }
+
+    [Fact]
+    public void Movimiento_ConValorCero_Rechazado()
+    {
+        var cuenta = CuentaConSaldo(saldoInicial: 540);
+
+        Assert.Throws<ArgumentException>(() => cuenta.RegistrarMovimiento(TipoMovimiento.Deposito, 0));
+        Assert.Empty(cuenta.Movimientos);
+    }
+
+    [Fact]
     public void SaldoDisponible_ConMovimientosMixtos_UsaElSignoDeCadaTipo()
     {
         var cuenta = CuentaConSaldo(saldoInicial: 2000);
