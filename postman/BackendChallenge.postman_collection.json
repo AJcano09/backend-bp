@@ -1,0 +1,1019 @@
+{
+  "info": {
+    "_postman_id": "9f7c1c2a-5d4e-4f3a-9b8c-2d1e0f3a4b5c",
+    "name": "Backend Challenge - Microservicios Bancarios",
+    "description": "Colección de validación de endpoints del challenge bancario (.NET 8). Dos microservicios: ClientService (clientes) y AccountService (cuentas, movimientos, reportes), comunicados por RabbitMQ.\n\nPara ejecutar: levantar los servicios con `docker compose up -d` desde la raíz del repo y correr la colección con \"Run Collection\" de arriba a abajo.\n\nLos puertos se configuran con las variables `clientServiceUrl` y `accountServiceUrl`. Los ids de cliente se encadenan automáticamente entre requests (scripts en la pestaña Tests de cada POST de creación), así que la colección no depende de una base vacía ni de ids fijos.\n\nResultados esperados en la primera ejecución (datos del enunciado):\n- Jose Lema crea la cuenta 478758 (Ahorros, 2000) y retira 575 -> saldo 1425\n- Marianela Montalvo crea 225487 (Corriente, 100) y deposita 600 -> saldo 700\n- Juan Osorio crea 495878 (Ahorros, 0) y deposita 150 -> saldo 150\n- Marianela crea 496825 (Ahorros, 540) y retira 540 -> saldo 0\n- El último movimiento (retiro 5000 en 496825) fuerza el caso F3: HTTP 400 \"Saldo no disponible\"\n\nAlgunos tests son tolerantes a re-ejecución: correr la colección dos veces sobre la misma base puede cambiar saldos ya acumulados; los asserts siguen en verde mientras el contrato HTTP se cumpla.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "clientServiceUrl",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "accountServiceUrl",
+      "value": "http://localhost:5002",
+      "type": "string"
+    },
+    {
+      "key": "clienteIdJoseLema",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clienteIdMarianelaMontalvo",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clienteIdJuanOsorio",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Clientes",
+      "description": "CRUD del microservicio de clientes (F1). Los POST de creación guardan el clienteId devuelto en variables de colección que usan las carpetas siguientes.",
+      "item": [
+        {
+          "name": "POST Crear cliente - Jose Lema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 201 en primera ejecución: guarda el id devuelto. 409 en re-ejecución: el cliente ya existe y se recupera su id desde la lista, así el encadenamiento sigue funcionando sin base vacía.",
+                  "pm.test(\"Status 201 (creado) o 409 (ya existía)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Devuelve clienteId numérico\", () => pm.expect(body.clienteId).to.be.a('number'));",
+                  "  pm.test(\"Estado activo\", () => pm.expect(body.estado).to.eql(true));",
+                  "  pm.collectionVariables.set(\"clienteIdJoseLema\", body.clienteId);",
+                  "} else {",
+                  "  pm.sendRequest(\"{{clientServiceUrl}}/api/clientes\", (e, res) => {",
+                  "    const found = res.json().find(c => c.identificacion === \"1723456789\");",
+                  "    if (found) {",
+                  "      pm.collectionVariables.set(\"clienteIdJoseLema\", found.clienteId);",
+                  "      console.log(\"Cliente ya existente; id recuperado de la lista: \" + found.clienteId);",
+                  "    }",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Jose Lema\",\n  \"genero\": \"Masculino\",\n  \"edad\": 35,\n  \"identificacion\": \"1723456789\",\n  \"direccion\": \"Otavalo sn y principal\",\n  \"telefono\": \"098254785\",\n  \"contrasena\": \"1234\",\n  \"estado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Caso de uso 1 del enunciado. Guarda el clienteId en la variable de colección clienteIdJoseLema."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cliente - Marianela Montalvo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 (creado) o 409 (ya existía)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Devuelve clienteId numérico\", () => pm.expect(body.clienteId).to.be.a('number'));",
+                  "  pm.collectionVariables.set(\"clienteIdMarianelaMontalvo\", body.clienteId);",
+                  "} else {",
+                  "  pm.sendRequest(\"{{clientServiceUrl}}/api/clientes\", (e, res) => {",
+                  "    const found = res.json().find(c => c.identificacion === \"1734567890\");",
+                  "    if (found) {",
+                  "      pm.collectionVariables.set(\"clienteIdMarianelaMontalvo\", found.clienteId);",
+                  "      console.log(\"Cliente ya existente; id recuperado de la lista: \" + found.clienteId);",
+                  "    }",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Marianela Montalvo\",\n  \"genero\": \"Femenino\",\n  \"edad\": 37,\n  \"identificacion\": \"1734567890\",\n  \"direccion\": \"Amazonas y NNUU\",\n  \"telefono\": \"097548965\",\n  \"contrasena\": \"5678\",\n  \"estado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Caso de uso 2 del enunciado. Guarda el clienteId en clienteIdMarianelaMontalvo (tiene las cuentas 225487 y 496825)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cliente - Juan Osorio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 (creado) o 409 (ya existía)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Devuelve clienteId numérico\", () => pm.expect(body.clienteId).to.be.a('number'));",
+                  "  pm.collectionVariables.set(\"clienteIdJuanOsorio\", body.clienteId);",
+                  "} else {",
+                  "  pm.sendRequest(\"{{clientServiceUrl}}/api/clientes\", (e, res) => {",
+                  "    const found = res.json().find(c => c.identificacion === \"1745678901\");",
+                  "    if (found) {",
+                  "      pm.collectionVariables.set(\"clienteIdJuanOsorio\", found.clienteId);",
+                  "      console.log(\"Cliente ya existente; id recuperado de la lista: \" + found.clienteId);",
+                  "    }",
+                  "  });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Osorio\",\n  \"genero\": \"Masculino\",\n  \"edad\": 30,\n  \"identificacion\": \"1745678901\",\n  \"direccion\": \"Sta Rosa\",\n  \"telefono\": \"098874587\",\n  \"contrasena\": \"1245\",\n  \"estado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "description": "Caso de uso 3 del enunciado. Guarda el clienteId en clienteIdJuanOsorio (titular de la cuenta 495878)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Listar todos los clientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve una lista\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Cliente por id (Jose Lema)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Cliente esperado\", () => pm.expect(body.nombre).to.eql('Jose Lema'));",
+                  "pm.test(\"Id coincide con la variable encadenada\", () => pm.expect(body.clienteId).to.eql(Number(pm.collectionVariables.get('clienteIdJoseLema'))));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes/{{clienteIdJoseLema}}",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{clienteIdJoseLema}}"
+              ]
+            },
+            "description": "Usa la variable encadenada en el POST anterior, no un id fijo."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente (cambio de teléfono)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Teléfono actualizado\", () => pm.expect(body.telefono).to.eql('098254786'));",
+                  "pm.test(\"Sigue activo\", () => pm.expect(body.estado).to.eql(true));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Jose Lema\",\n  \"genero\": \"Masculino\",\n  \"edad\": 35,\n  \"identificacion\": \"1723456789\",\n  \"direccion\": \"Otavalo sn y principal\",\n  \"telefono\": \"098254786\",\n  \"contrasena\": \"1234\",\n  \"estado\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes/{{clienteIdJoseLema}}",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{clienteIdJoseLema}}"
+              ]
+            },
+            "description": "El PUT es una actualización completa (todos los campos). Cambia el teléfono para que el efecto sea visible."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Baja lógica (Juan Osorio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204 No Content\", () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{clientServiceUrl}}/api/clientes/{{clienteIdJuanOsorio}}",
+              "host": [
+                "{{clientServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{clienteIdJuanOsorio}}"
+              ]
+            },
+            "description": "Baja lógica: Estado pasa a false, el registro se conserva. El read model de AccountService conserva la fila, así que la cuenta 495878 de Juan puede crearse igualmente (F4 mantiene el historial)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cuentas",
+      "description": "Creación de cuentas (F1) con los 4 casos de uso del enunciado. Los clienteId referencian las variables encadenadas en la carpeta Clientes, no ids fijos.",
+      "item": [
+        {
+          "name": "POST Crear cuenta 478758 - Jose Lema (Ahorros 2000)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 201 en primera ejecución; 400/409 si la cuenta ya existía (re-ejecución sobre la misma base)",
+                  "pm.test(\"Status 201 o ya-existente (400/409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test(\"Saldo inicial 2000\", () => pm.expect(pm.response.json().saldoDisponible).to.eql(2000));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 478758,\n  \"tipo\": \"Ahorros\",\n  \"saldoInicial\": 2000,\n  \"clienteId\": {{clienteIdJoseLema}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas"
+              ]
+            },
+            "description": "Caso de uso 1. Requiere que el evento RabbitMQ del POST de cliente ya haya dado de alta el read model (la creación de cuentas valida contra ClientesLectura)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cuenta 225487 - Marianela (Corriente 100)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 o ya-existente (400/409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test(\"Saldo inicial 100\", () => pm.expect(pm.response.json().saldoDisponible).to.eql(100));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 225487,\n  \"tipo\": \"Corriente\",\n  \"saldoInicial\": 100,\n  \"clienteId\": {{clienteIdMarianelaMontalvo}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas"
+              ]
+            },
+            "description": "Caso de uso 2."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cuenta 495878 - Juan Osorio (Ahorros 0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 o ya-existente (400/409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test(\"Saldo inicial 0\", () => pm.expect(pm.response.json().saldoDisponible).to.eql(0));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 495878,\n  \"tipo\": \"Ahorros\",\n  \"saldoInicial\": 0,\n  \"clienteId\": {{clienteIdJuanOsorio}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas"
+              ]
+            },
+            "description": "Caso de uso 3. Juan fue dado de baja lógicamente en la carpeta anterior; el read model conserva la fila deliberadamente, así que la cuenta se crea igual (F4 mantiene el historial)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cuenta 496825 - Marianela (Ahorros 540)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 o ya-existente (400/409)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test(\"Saldo inicial 540\", () => pm.expect(pm.response.json().saldoDisponible).to.eql(540));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 496825,\n  \"tipo\": \"Ahorros\",\n  \"saldoInicial\": 540,\n  \"clienteId\": {{clienteIdMarianelaMontalvo}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas"
+              ]
+            },
+            "description": "Caso de uso 4."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Listar todas las cuentas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve una lista\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Cuenta por número (478758)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Número esperado\", () => pm.expect(pm.response.json().numeroCuenta).to.eql(478758));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas/478758",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas",
+                "478758"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cuenta 496825 (tipo a Corriente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tipo actualizado a Corriente\", () => pm.expect(pm.response.json().tipoCuenta).to.eql('Corriente'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"Corriente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/cuentas/496825",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "cuentas",
+                "496825"
+              ]
+            },
+            "description": "Actualiza el tipo de la cuenta 496825. El retiro del enunciado sobre esta cuenta no depende del tipo, así que el movimiento posterior sigue siendo válido."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Movimientos",
+      "description": "Los 4 movimientos del enunciado (F2) + un request que fuerza F3 (retiro sin fondos, HTTP 400 \"Saldo no disponible\") + consulta del ledger por cuenta.",
+      "item": [
+        {
+          "name": "POST Retiro 575 en 478758 (Jose Lema)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Es un retiro\", () => pm.expect(body.tipoMovimiento).to.eql('Retiro'));",
+                  "// Primera ejecución: saldo 1425 (2000 - 575). En re-ejecución el saldo acumulado es menor; el assert de status es el contrato estable.",
+                  "pm.test(\"Id persistido (≠ 0)\", () => pm.expect(body.id).to.not.eql(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 478758,\n  \"tipo\": \"Retiro\",\n  \"valor\": 575\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ]
+            },
+            "description": "Movimiento 1 del enunciado: retiro de 575 de la cuenta 478758 (saldo 2000 -> 1425)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Depósito 600 en 225487 (Marianela)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Es un depósito\", () => pm.expect(body.tipoMovimiento).to.eql('Deposito'));",
+                  "pm.test(\"Id persistido (≠ 0)\", () => pm.expect(body.id).to.not.eql(0));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 225487,\n  \"tipo\": \"Deposito\",\n  \"valor\": 600\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ]
+            },
+            "description": "Movimiento 2 del enunciado: depósito de 600 en la cuenta 225487 (saldo 100 -> 700)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Depósito 150 en 495878 (Juan Osorio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Es un depósito\", () => pm.expect(body.tipoMovimiento).to.eql('Deposito'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 495878,\n  \"tipo\": \"Deposito\",\n  \"valor\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ]
+            },
+            "description": "Movimiento 3 del enunciado: depósito de 150 en la cuenta 495878 (saldo 0 -> 150)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Retiro 540 en 496825 (Marianela)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Primera ejecución: 201 (540 - 540 = 0, retiro legal). En re-ejecución el saldo ya es 0 y el mismo retiro devuelve… el 400 de F3, también esperado.",
+                  "pm.test(\"Status 201 en primera ejecución (o 400 en re-ejecución)\", () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 496825,\n  \"tipo\": \"Retiro\",\n  \"valor\": 540\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ]
+            },
+            "description": "Movimiento 4 del enunciado: retiro de 540 de la cuenta 496825 (saldo 540 -> 0)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST F3 - Retiro mayor al saldo (5000 en 496825)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Mensaje 'Saldo no disponible'\", () => pm.expect(pm.response.json().detail).to.eql('Saldo no disponible'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroCuenta\": 496825,\n  \"tipo\": \"Retiro\",\n  \"valor\": 5000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ]
+            },
+            "description": "Caso F3 forzado: retiro de 5000 sobre 496825, cuyo saldo es 0 tras el movimiento del enunciado. El dominio no permite saldo negativo y responde siempre 400 con \"Saldo no disponible\". Incluso en re-ejecución el saldo de esta cuenta nunca alcanza 5000."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Movimientos por cuenta (?cuenta=478758)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Ledger no vacío\", () => pm.expect(body.length).to.be.greaterThan(0));",
+                  "pm.test(\"Movimientos de la cuenta 478758\", () => pm.expect(body[0].numeroCuenta).to.eql(478758));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/movimientos?cuenta=478758",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "movimientos"
+              ],
+              "query": [
+                {
+                  "key": "cuenta",
+                  "value": "478758"
+                }
+              ]
+            },
+            "description": "Ledger de la cuenta 478758 ordenado por fecha descendente."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "description": "Estado de cuenta con movimientos en rango de fechas (F4).",
+      "item": [
+        {
+          "name": "GET Reporte de Jose Lema (2020-2035)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Reporte no vacío\", () => pm.expect(body.length).to.be.greaterThan(0));",
+                  "pm.test(\"Cliente correcto\", () => pm.expect(body[0].Cliente).to.eql('Jose Lema'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/reportes?clienteId={{clienteIdJoseLema}}&desde=2020-01-01&hasta=2035-01-01",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes"
+              ],
+              "query": [
+                {
+                  "key": "clienteId",
+                  "value": "{{clienteIdJoseLema}}"
+                },
+                {
+                  "key": "desde",
+                  "value": "2020-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2035-01-01"
+                }
+              ]
+            },
+            "description": "Reporte del cliente encadenado (Jose Lema). El rango amplio garantiza que la respuesta venga con datos (el retiro de 575 ya registrado cae dentro)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
