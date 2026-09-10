@@ -7,4 +7,5 @@ public sealed class RabbitMqOptions
 
     public string Host { get; set; } = "localhost";
     public string Exchange { get; set; } = "clientes";
+    public string Queue { get; set; } = "account.clientes";
 }
