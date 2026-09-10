@@ -77,13 +77,11 @@ public sealed class Cuenta
         if (!Estado)
             throw new InvalidOperationException("The account is inactive and cannot register movements.");
 
-        var valorConSigno = tipoMovimiento == TipoMovimiento.Retiro ? -valor : valor;
-        var nuevoSaldo = SaldoDisponible + valorConSigno;
-
-        if (nuevoSaldo < 0)
-            throw new SaldoInsuficienteException();
-
-        var movimiento = new Movimiento(tipoMovimiento, valor, nuevoSaldo, NumeroCuenta);
+        // The post-balance is computed by Movimiento itself; Cuenta only
+        // provides the previous balance. If the withdrawal exceeds the
+        // available balance, Movimiento throws SaldoInsuficienteException
+        // (F3, "Saldo no disponible") BEFORE the movement is added: atomic.
+        var movimiento = new Movimiento(tipoMovimiento, valor, SaldoDisponible, NumeroCuenta);
         _movimientos.Add(movimiento);
         return movimiento;
     }

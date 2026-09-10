@@ -1,3 +1,4 @@
+using AccountService.Domain.Exceptions;
 using AccountService.Domain.ValueObjects;
 
 namespace AccountService.Domain.Entities;
@@ -5,7 +6,8 @@ namespace AccountService.Domain.Entities;
 /// <summary>
 /// Single transaction of the account ledger (F2). Immutable: created only by
 /// Cuenta.RegistrarMovimiento and never modified or deleted. Saldo is the
-/// balance AFTER this movement was applied.
+/// balance AFTER this movement was applied and is self-computed: the entity
+/// refuses to exist in an inconsistent state.
 /// </summary>
 public sealed class Movimiento
 {
@@ -31,12 +33,27 @@ public sealed class Movimiento
         // EF Core materialization.
     }
 
-    internal Movimiento(TipoMovimiento tipoMovimiento, decimal valor, decimal saldo, int numeroCuenta)
+    /// <summary>
+    /// Creates a movement and computes its post-balance from the previous
+    /// balance. Defense in depth: even a bypass of the aggregate cannot create
+    /// a movement with a non-positive value or a negative post-balance (F3).
+    /// </summary>
+    /// <param name="tipoMovimiento">Deposito or Retiro; the sign is owned by the type.</param>
+    /// <param name="valor">Positive magnitude of the movement.</param>
+    /// <param name="saldoAnterior">Balance before applying this movement.</param>
+    /// <param name="numeroCuenta">Account number this movement belongs to.</param>
+    internal Movimiento(TipoMovimiento tipoMovimiento, decimal valor, decimal saldoAnterior, int numeroCuenta)
     {
+        if (valor <= 0)
+            throw new ArgumentOutOfRangeException(nameof(valor), "The movement value must be positive.");
+
         Fecha = DateTime.UtcNow;
         TipoMovimiento = tipoMovimiento;
         Valor = valor;
-        Saldo = saldo;
         NumeroCuenta = numeroCuenta;
+        Saldo = saldoAnterior + tipoMovimiento.Signo() * valor;
+
+        if (Saldo < 0)
+            throw new SaldoInsuficienteException();
     }
 }
