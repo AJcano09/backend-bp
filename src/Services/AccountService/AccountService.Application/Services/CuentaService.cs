@@ -28,7 +28,7 @@ public sealed class CuentaService
         if (await _cuentaRepository.GetByNumeroCuentaAsync(request.NumeroCuenta, cancellationToken) is not null)
             throw new InvalidOperationException($"The account number {request.NumeroCuenta} already exists.");
 
-        if (!await _cuentaRepository.ClienteExisteAsync(request.ClienteId, cancellationToken))
+        if (!await WaitForClienteReadModelAsync(request.ClienteId, cancellationToken))
             throw new ArgumentException($"The client {request.ClienteId} is not registered in the account service (ClientesLectura).");
 
         var cuenta = new Cuenta(request.NumeroCuenta, tipo, request.SaldoInicial, request.ClienteId);
@@ -72,5 +72,29 @@ public sealed class CuentaService
     {
         var cuenta = await GetByNumeroCuentaAsync(numeroCuenta, cancellationToken);
         return cuenta.Movimientos.OrderByDescending(m => m.Fecha).ToList();
+    }
+
+    /// <summary>
+    /// Eventually-consistent guard for the ClientesLectura read model: the
+    /// client event (RabbitMQ) may still be in flight when a POST /cuentas
+    /// arrives right after the client was created. A short bounded wait (up to
+    /// 10 seconds) absorbs the broker warm-up so the API never reports a false
+    /// "client not registered"; a client that is still absent afterwards is a
+    /// genuine business/integration error and keeps the original message.
+    /// </summary>
+    private async Task<bool> WaitForClienteReadModelAsync(int clienteId, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            if (await _cuentaRepository.ClienteExisteAsync(clienteId, cancellationToken))
+                return true;
+
+            if (attempt == 19)
+                return false;
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
+
+        return false;
     }
 }

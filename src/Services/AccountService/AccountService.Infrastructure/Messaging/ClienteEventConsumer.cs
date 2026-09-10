@@ -62,11 +62,11 @@ public sealed class ClienteEventConsumer : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "RabbitMQ consumer unavailable ({Host}); retrying in 10s.",
+                _logger.LogWarning(ex, "RabbitMQ consumer unavailable ({Host}); retrying in 2s.",
                     _options.Value.Host);
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
