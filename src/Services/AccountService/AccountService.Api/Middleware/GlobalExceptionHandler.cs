@@ -9,6 +9,7 @@ namespace AccountService.Api.Middleware;
 /// Single exception pipeline for the account service (spec: "manejo de
 /// excepciones"). Maps domain/application exceptions to ProblemDetails:
 ///   - CuentaNotFoundException       -> 404
+///   - ClienteNotFoundException      -> 404 (F4 report for unknown client)
 ///   - SaldoInsuficienteException    -> 400 (F3: "Saldo no disponible")
 ///   - InvalidOperationException     -> 409 (e.g. duplicate account number)
 ///   - ArgumentException/FormatException -> 400 (invalid payloads/enums)
@@ -31,6 +32,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, title) = exception switch
         {
             CuentaNotFoundException => (StatusCodes.Status404NotFound, "Account not found"),
+            ClienteNotFoundException => (StatusCodes.Status404NotFound, "Client not found"),
             SaldoInsuficienteException => (StatusCodes.Status400BadRequest, "Business rule violation"),
             InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict"),
             ArgumentException or FormatException => (StatusCodes.Status400BadRequest, "Invalid request"),

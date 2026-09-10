@@ -1,3 +1,4 @@
+using AccountService.Application.Exceptions;
 using AccountService.Application.Ports;
 using AccountService.Domain.Entities;
 using AccountService.Infrastructure.Persistence;
@@ -46,4 +47,23 @@ public sealed class CuentaRepository : ICuentaRepository
 
     public Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default)
         => _dbContext.ClientesLectura.AnyAsync(c => c.ClienteId == clienteId, cancellationToken);
+
+    public async Task<IReadOnlyList<Cuenta>> GetByClienteIdConMovimientosEnRangoAsync(
+        int clienteId,
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default)
+        => await _dbContext.Cuentas
+            .Where(c => c.ClienteId == clienteId)
+            .Include(c => c.Movimientos.Where(m => m.Fecha >= desde && m.Fecha <= hasta))
+            .AsNoTracking()
+            .OrderBy(c => c.NumeroCuenta)
+            .ToListAsync(cancellationToken);
+
+    public async Task<string> GetNombreClienteAsync(int clienteId, CancellationToken cancellationToken = default)
+        => (await _dbContext.ClientesLectura
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.ClienteId == clienteId, cancellationToken))
+            ?.Nombre
+            ?? throw new ClienteNotFoundException(clienteId);
 }

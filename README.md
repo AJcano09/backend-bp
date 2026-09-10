@@ -24,3 +24,26 @@ La solución se levanta de forma automatizada mediante Docker Compose, el cual c
    ```bash
    git clone <url-del-repositorio>
    cd backend-bp
+
+
+## 📂 Endpoints Principales
+
+### Clientes (`/clientes`)
+- `GET /api/clientes` - Listar clientes
+- `POST /api/clientes` - Crear cliente
+- `PUT /api/clientes/{id}` - Actualizar cliente
+- `DELETE /api/clientes/{id}` - Eliminar cliente
+
+### Cuentas (`/cuentas`)
+- `GET /api/cuentas` - Listar cuentas
+- `POST /api/cuentas` - Crear cuenta
+- `PUT /api/cuentas/{id}` - Actualizar cuenta
+
+### Movimientos (`/movimientos`)
+- `GET /api/movimientos` - Listar movimientos
+- `POST /api/movimientos` - Registrar movimiento (Valida saldo disponible y arroja error si no hay fondos).
+
+### Reportes (`/reportes`)
+- `GET /api/reportes?clienteId=2&desde=2022-02-01&hasta=2022-02-28` - Estado de cuenta consolidado en formato JSON (una fila por movimiento, con saldo posterior). El enunciado expresa `/reportes?fecha=rango fechas&cliente=...`; aquí el rango se interpreta como dos parámetros explícitos `desde`/`hasta` (yyyy-MM-dd) por claridad y robustez de validación.
+
+---

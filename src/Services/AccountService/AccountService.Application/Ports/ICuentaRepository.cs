@@ -19,4 +19,18 @@ public interface ICuentaRepository
 
     /// <summary>True when the client is already mirrored in ClientesLectura (read model).</summary>
     Task<bool> ClienteExisteAsync(int clienteId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// F4 read-only projection: accounts of one client with ONLY the movements
+    /// inside [desde, hasta]. The date filter travels to SQL (filtered Include),
+    /// never applied in memory over a fully-loaded ledger.
+    /// </summary>
+    Task<IReadOnlyList<Cuenta>> GetByClienteIdConMovimientosEnRangoAsync(
+        int clienteId,
+        DateTime desde,
+        DateTime hasta,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Client display name from the read model (F4 report).</summary>
+    Task<string> GetNombreClienteAsync(int clienteId, CancellationToken cancellationToken = default);
 }
