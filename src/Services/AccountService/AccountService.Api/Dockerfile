@@ -6,6 +6,9 @@ EXPOSE 8080
 
 # Etapa de construcción
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Tolerancia a timeouts de red con nuget.org: retry con backoff exponencial + timeout por request de 5 min
+ENV NUGET_ENABLE_ENHANCED_HTTP_RETRY=true
+ENV NUGET_HTTP_TIMEOUT=300
 WORKDIR /src
 
 # Copiar los archivos de proyecto (.csproj) para restaurar dependencias
@@ -13,7 +16,7 @@ COPY ["src/Services/AccountService/AccountService.Api/AccountService.Api.csproj"
 COPY ["src/Services/AccountService/AccountService.Infrastructure/AccountService.Infrastructure.csproj", "src/Services/AccountService/AccountService.Infrastructure/"]
 COPY ["src/Services/AccountService/AccountService.Application/AccountService.Application.csproj", "src/Services/AccountService/AccountService.Application/"]
 COPY ["src/Services/AccountService/AccountService.Domain/AccountService.Domain.csproj", "src/Services/AccountService/AccountService.Domain/"]
-RUN dotnet restore "src/Services/AccountService/AccountService.Api/AccountService.Api.csproj"
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked dotnet restore "src/Services/AccountService/AccountService.Api/AccountService.Api.csproj"
 
 # Copiar el resto del código y compilar
 COPY . .

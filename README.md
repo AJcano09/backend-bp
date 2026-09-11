@@ -35,6 +35,13 @@ docker compose up --build
 
 Los archivos `.env` (raíz y por servicio) ya vienen trackeados con valores seguros de ejemplo (`changeme`/`guest`/`localhost`). No es necesario copiar ni editar nada antes de levantar.
 
+> Si `docker compose up --build` falla por timeouts de NuGet en una red lenta o inestable, compila los servicios uno a la vez en vez de en paralelo:
+> ```bash
+> docker compose build clientservice.api
+> docker compose build accountservice.api
+> docker compose up
+> ```
+
 ### 3. Verificar que todo quedó arriba
 
 Con los contenedores corriendo, confirma que ambas APIs respondan:
