@@ -13,8 +13,6 @@ COPY ["src/Services/AccountService/AccountService.Api/AccountService.Api.csproj"
 COPY ["src/Services/AccountService/AccountService.Infrastructure/AccountService.Infrastructure.csproj", "src/Services/AccountService/AccountService.Infrastructure/"]
 COPY ["src/Services/AccountService/AccountService.Application/AccountService.Application.csproj", "src/Services/AccountService/AccountService.Application/"]
 COPY ["src/Services/AccountService/AccountService.Domain/AccountService.Domain.csproj", "src/Services/AccountService/AccountService.Domain/"]
-COPY ["src/Shared/Shared.csproj", "src/Shared/"]
-
 RUN dotnet restore "src/Services/AccountService/AccountService.Api/AccountService.Api.csproj"
 
 # Copiar el resto del código y compilar
