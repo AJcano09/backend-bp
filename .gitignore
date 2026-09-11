@@ -1,8 +1,7 @@
 # Environment and local tooling (never commit secrets or personal config)
-.env
-.env.*
-!.env.example
-!**/.env.example
+# .env files are tracked with safe defaults (changeme/guest/localhost) so
+# the evaluator can run docker compose up --build immediately after clone.
+# Override locally with real credentials if needed — never commit those.
 .atl/
 .config/
 .idea/

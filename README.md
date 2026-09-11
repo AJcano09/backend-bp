@@ -27,32 +27,21 @@ git clone <url-del-repositorio>
 cd backend-bp
 ```
 
-### 2. Copiar los archivos de entorno
-
-Las credenciales y cadenas de conexión **no se versionan**. Copia los archivos de ejemplo (que sí están en el repo) — los valores de ejemplo funcionan tal cual para correr localmente:
-
-```bash
-cp .env.example .env
-cp src/Services/ClientService/.env.example src/Services/ClientService/.env
-cp src/Services/AccountService/.env.example src/Services/AccountService/.env
-```
-
-- El `.env` raíz alimenta la infraestructura (Postgres y RabbitMQ) por interpolación en `docker-compose.yaml`.
-- Cada API usa su propio `.env` (`env_file:` en compose) con su cadena de conexión y host del broker; cada servicio queda autocontenido.
-
-### 3. Levantar la solución
+### 2. Levantar la solución
 
 ```bash
 docker compose up --build
 ```
 
-### 4. Verificar que todo quedó arriba
+Los archivos `.env` (raíz y por servicio) ya vienen trackeados con valores seguros de ejemplo (`changeme`/`guest`/`localhost`). No es necesario copiar ni editar nada antes de levantar.
+
+### 3. Verificar que todo quedó arriba
 
 Con los contenedores corriendo, confirma que ambas APIs respondan:
 
 - Swagger de Clientes: http://localhost:5001/swagger
 - Swagger de Cuentas y Movimientos: http://localhost:5002/swagger
-- RabbitMQ Management: http://localhost:15672 (usuario/contraseña del `.env` raíz, por defecto `guest`/`guest`)
+- RabbitMQ Management: http://localhost:15672 (usuario/contraseña: `guest`/`guest`)
 
 Si las tres cargan, la solución quedó arriba correctamente.
 
@@ -103,16 +92,7 @@ Importa `postman/BackendChallenge.postman_collection.json` en Postman. Incluye l
 La base de datos se **genera automáticamente** con EF Core Migrations al iniciar la aplicación. No es necesario ejecutar scripts SQL adjuntos.
 
 - **Con Docker** (`docker compose up --build`): PostgreSQL se levanta y se crean automáticamente las bases `bank_clients` (desde `POSTGRES_DB` del `.env` raíz) y `bank_accounts` (al arrancar el `AccountService`, mediante `EnsureCreated`/`Migrate`). El schema inicial viene definido por las migraciones incluidas en cada proyecto.
-- **Sin Docker** (desarrollo local): establecer la variable `ConnectionStrings__DefaultConnection` en el archivo `.env` del servicio correspondiente o mediante `dotnet user-secrets`:
-  ```bash
-  cd src/Services/ClientService/ClientService.Api
-  dotnet user-secrets init
-  dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5433;Database=bank_clients;Username=admin;Password=changeme"
-  dotnet user-secrets set "RabbitMQ:Host" "localhost"
-  ```
-  (repite para `AccountService.Api` con `Database=bank_accounts`).
-
-  Las migraciones se aplican con:
+- **Sin Docker** (desarrollo local): los archivos `.env` ya vienen configurados con los defaults. Asegúrate de que los puertos 5433 (Postgres) y 5672 (RabbitMQ) estén disponibles. Las migraciones se aplican con:
   ```bash
   dotnet ef migrations add <Nombre> --project src/Services/ClientService/ClientService.Infrastructure
   dotnet ef database update --project src/Services/ClientService/ClientService.Infrastructure
