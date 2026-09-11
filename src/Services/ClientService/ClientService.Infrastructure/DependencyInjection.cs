@@ -30,7 +30,12 @@ public static class DependencyInjection
         services.AddSingleton(provider =>
         {
             var rabbitOptions = provider.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
-            return new ConnectionFactory { HostName = rabbitOptions.Host };
+            return new ConnectionFactory
+            {
+                HostName = rabbitOptions.Host,
+                UserName = rabbitOptions.User,
+                Password = rabbitOptions.Password
+            };
         });
 
         return services;

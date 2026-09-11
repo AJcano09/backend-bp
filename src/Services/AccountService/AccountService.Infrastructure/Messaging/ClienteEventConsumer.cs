@@ -76,10 +76,16 @@ public sealed class ClienteEventConsumer : BackgroundService
         }
     }
 
-    private EventingBasicConsumer Connect()
-    {
-        var options = _options.Value;
-        var factory = new ConnectionFactory { HostName = options.Host, DispatchConsumersAsync = false };
+private EventingBasicConsumer Connect()
+        {
+            var options = _options.Value;
+            var factory = new ConnectionFactory
+            {
+                HostName = options.Host,
+                UserName = options.User,
+                Password = options.Password,
+                DispatchConsumersAsync = false
+            };
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
 
