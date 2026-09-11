@@ -23,7 +23,7 @@ La solución se levanta de forma automatizada mediante Docker Compose, el cual c
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/AJcano09/backend-bp.git
 cd backend-bp
 ```
 
